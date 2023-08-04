@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Image Cropping Example</title>
+</head>
+<body>
+  <input type="file" accept="image/*" id="fileInput" />
+  <div id="canvasContainer">
+    <canvas id="canvas" width="600" height="400"></canvas>
+  </div>
+  <button onclick="cropImage()">Crop Image</button>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+    const canvasContainer = document.getElementById('canvasContainer');
+
+    let isDrawing = false;
+    let startX, startY;
+    let imageLoaded = false;
+    let img = new Image();
+
+    fileInput.addEventListener('change', handleImageChange);
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
+
+    function handleImageChange(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+
+      reader.onloadend = () => {
+        img.src = reader.result;
+      };
+
+      img.onload = () => {
+        const aspectRatio = img.width / img.height;
+        const canvasWidth = canvasContainer.offsetWidth;
+        const canvasHeight = canvasWidth / aspectRatio;
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        context.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+        imageLoaded = true;
+      };
+
+      if (file) {
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function handleMouseDown(event) {
+      if (!imageLoaded) return;
+      isDrawing = true;
+      startX = event.offsetX;
+      startY = event.offsetY;
+    }
+
+    function handleMouseMove(event) {
+      if (!isDrawing || !imageLoaded) return;
+      const endX = event.offsetX;
+      const endY = event.offsetY;
+
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(
+        img,
+        0,
+        0,
+        canvasContainer.offsetWidth,
+        canvasContainer.offsetWidth / (canvas.width / canvas.height)
+      );
+
+      context.strokeStyle = 'red';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(startX, startY);
+      context.lineTo(endX, startY);
+      context.lineTo(endX, endY);
+      context.lineTo(startX, endY);
+      context.closePath();
+      context.stroke();
+    }
+
+    function handleMouseUp(event) {
+      if (!imageLoaded) return;
+      isDrawing = false;
+    }
+
+    function cropImage() {
+      if (!imageLoaded) return;
+
+      const endX = event.offsetX;
+      const endY = event.offsetY;
+      const width = endX - startX;
+      const height = endY - startY;
+
+      // 영역 크롭
+      const croppedCanvas = document.createElement('canvas');
+      croppedCanvas.width = width;
+      croppedCanvas.height = height;
+      const croppedContext = croppedCanvas.getContext('2d');
+      croppedContext.drawImage(img, startX, startY, width, height, 0, 0, width, height);
+
+      // 크롭한 영역 표시
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(croppedCanvas, 0, 0, canvas.width, canvas.height);
+      img.src = croppedCanvas.toDataURL();
+    }
+  </script>
+</body>
+</html>

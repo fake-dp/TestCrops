@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Image Cropping Example</title>
+</head>
+<body>
+  <input type="file" accept="image/*" id="fileInput" />
+  <div id="canvasContainer">
+    <canvas id="canvas" width="600" height="400"></canvas>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+    const canvasContainer = document.getElementById('canvasContainer');
+
+    let isDrawing = false;
+    let startX, startY;
+    let imageLoaded = false;
+    let img = new Image();
+
+    fileInput.addEventListener('change', handleImageChange);
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
+
+    function handleImageChange(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+
+      reader.onloadend = () => {
+        img.src = reader.result; // 이미지를 설정하기 전에 onload 이벤트를 먼저 등록
+      };
+
+      img.onload = () => {
+        const aspectRatio = img.width / img.height;
+        const canvasWidth = canvasContainer.offsetWidth;
+        const canvasHeight = canvasWidth / aspectRatio;
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        context.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+        imageLoaded = true;
+      };
+
+      if (file) {
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function handleMouseDown(event) {
+      if (!imageLoaded) return;
+      isDrawing = true;
+      startX = event.offsetX;
+      startY = event.offsetY;
+    }
+
+    function handleMouseMove(event) {
+      if (!isDrawing || !imageLoaded) return;
+      const endX = event.offsetX;
+      const endY = event.offsetY;
+
+      drawImage();
+
+      context.strokeStyle = 'red';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(startX, startY);
+      context.lineTo(endX, startY);
+      context.lineTo(endX, endY);
+      context.lineTo(startX, endY);
+      context.closePath();
+      context.stroke();
+    }
+
+    function handleMouseUp(event) {
+      if (!imageLoaded) return;
+      isDrawing = false;
+      // 여기서 해당 영역의 정보를 저장하거나 다음 단계로 넘어갈 수 있습니다.
+      const endX = event.offsetX;
+      const endY = event.offsetY;
+      const width = endX - startX;
+      const height = endY - startY;
+      console.log(`선모양 영역 크기: ${width} x ${height}`);
+    }
+
+    function drawImage() {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(
+        img,
+        0,
+        0,
+        canvasContainer.offsetWidth,
+        canvasContainer.offsetWidth / (canvas.width / canvas.height)
+      );
+    }
+  </script>
+</body>
+</html>
